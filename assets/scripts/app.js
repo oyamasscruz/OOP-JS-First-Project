@@ -59,16 +59,48 @@ class ProductList {
     )
   ];
   render() {
-    const renderHook = document.getElementById('app');
     const prodList = document.createElement('ul');
     prodList.className = 'product-list';
     for (const prod of this.products) {
       const productItem = new ProductItem(prod);
       const prodEl = productItem.render();
       prodList.append(prodEl);
-      renderHook.append(prodList);
     } 
+  return prodList;
   }
 }
-const productList = new ProductList();
-productList.render();
+
+class ShoppingCart {
+  items = [];
+
+  addProducts(product) {
+    this.items.push(product);
+    this.totalOutput.innerHTML = `<h2>Total: \$${1}</h2>`;
+  }
+
+  render() {
+    const cartEl = document.createElement('section');
+    cartEl.innerHTML = `
+    <h2>Total: \$${0}</h2>
+    <button>Order Now!</button>
+    `;
+    cartEl.className = 'cart';
+    return cartEl;
+  }
+}
+
+class Shop {
+  render() {
+    const renderHook = document.getElementById('app');
+
+    const cart = new ShoppingCart();
+    const cartEl = cart.render();
+    const productList = new ProductList();
+    const prodListEl = productList.render();
+
+    renderHook.append(cartEl);
+    renderHook.append(prodListEl);
+  }
+}
+const shop = new Shop();
+shop.render();
