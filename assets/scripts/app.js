@@ -12,19 +12,53 @@ class Product {
   }
 }
 
-class ProductItem {
-  constructor(product) {
+class ElementAttribute {
+  constructor(attrName, attrValue) {
+    this.name = attrName;
+    this.value = attrValue;
+  }
+}
+
+class Component {
+  constructor(renderHookId, shouldRender = true) {
+    this.hookId = renderHookId;
+    if(shouldRender) {
+      this.render();
+    }
+  }
+
+  render() {}
+
+  createRootElement(tag, cssClass, attributes) {
+    const rootElement = document.createElement(tag);
+    if(cssClass) {
+      rootElement.className = cssClass;
+    }
+    if(attributes && attributes.length > 0) {
+      for(const attr of attributes) {
+        rootElement.setAttribute(attr.name, attr.value);
+      }
+    }
+    document.getElementById(this.hookId).append(rootElement);
+    return rootElement;
+  }
+}
+
+
+
+class ProductItem extends Component {
+  constructor(product, renderHookId) {
+    super(renderHookId, false);
     this.product = product;
+    this.render();
   }
 
   addToCart() {
-    console.log('addign to cart...');
-    console.log(this.product);
+    App.addProductToCart(this.product);
   }
 
   render() {
-    const prodEl = document.createElement('li');
-    prodEl.className = 'product-item';
+    const prodEl = this.createRootElement('li', 'product-item');
     prodEl.innerHTML = `
       <div>
         <img src="${this.product.imageUrl}" alt="${this.product.title}"/>
@@ -39,68 +73,71 @@ class ProductItem {
     const addCartBtn = prodEl.querySelector('button');
     addCartBtn.addEventListener('click', this.addToCart.bind(this));
     // also addCartBtn.addEventListner('click', () => this.addToCart()) will be work.
-    return prodEl;
   }
 }
 
-class ProductList {
-  products = [
-    new Product(
-      'Pillow',
-      'https://www.pacificcoast.com/on/demandware.static/-/Sites-pcf-master-catalog/default/dw98d1dd36/images/Pillows/prod-image_NP_Eurosquare20x20_1_907.jpg',
-      9.99,
-      'A soft pillow'
-    ),
-    new Product(
-      'Bed linen',
-      'https://cdn.awsli.com.br/600x700/2536/2536086/produto/198197785/tmpfrisomarrom-fa4d5f4d62.jpg',
-      83.99,
-      'A classic Bed line'
-    )
-  ];
-  render() {
-    const prodList = document.createElement('ul');
-    prodList.className = 'product-list';
-    for (const prod of this.products) {
-      const productItem = new ProductItem(prod);
-      const prodEl = productItem.render();
-      prodList.append(prodEl);
-    } 
-  return prodList;
+class ProductList extends Component {
+  #products = [];
+
+  constructor(renderHookId) {
+    super(renderHookId, false);
+    this.render();
+    this.fetchProducts();
   }
-}
+  fetchProducts(){
+    this.#products =[
+      new Product(
+        'Pillow',
+        'https://www.pacificcoast.com/on/demandware.static/-/Sites-pcf-master-catalog/default/dw98d1dd36/images/Pillows/prod-image_NP_Eurosquare20x20_1_907.jpg',
+        9.99,
+        'A soft pillow'
+      ),
+      new Product(
+        'Bed linen',
+        'https://cdn.awsli.com.br/600x700/2536/2536086/produto/198197785/tmpfrisomarrom-fa4d5f4d62.jpg',
+        83.99,
+        'A classic Bed line'
+      )
+    ];
+    this.renderProducts();
+  }
 
-class ShoppingCart {
-  items = [];
-
-  addProducts(product) {
-    this.items.push(product);
-    this.totalOutput.innerHTML = `<h2>Total: \$${1}</h2>`;
+  renderProducts() {
+    for(const prod of this.#products) {
+      new ProductItem(prod, 'prod-list');
+    }
   }
 
   render() {
-    const cartEl = document.createElement('section');
-    cartEl.innerHTML = `
-    <h2>Total: \$${0}</h2>
-    <button>Order Now!</button>
-    `;
-    cartEl.className = 'cart';
-    return cartEl;
+    this.createRootElement('ul', 'product-list', [new ElementAttribute('id', 'prod-list')]);
+    if (this.#products && this.#products.length > 0) {
+      this.renderProducts();
+    }
   }
 }
 
 class Shop {
+  constructor() {
+    this.render();
+  }
+
   render() {
-    const renderHook = document.getElementById('app');
-
-    const cart = new ShoppingCart();
-    const cartEl = cart.render();
-    const productList = new ProductList();
-    const prodListEl = productList.render();
-
-    renderHook.append(cartEl);
-    renderHook.append(prodListEl);
+    this.cart = new ShoppingCart('app');
+    new ProductList('app');
   }
 }
-const shop = new Shop();
-shop.render();
+
+class App {
+  static cart;
+
+  static init() {
+    const shop = new Shop();
+    this.cart = shop.cart;
+  }
+
+  static addProductToCart(product) {
+    this.cart.addProduct(product);
+  }
+}
+
+App.init();
